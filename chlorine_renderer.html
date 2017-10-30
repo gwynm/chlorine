@@ -17,7 +17,10 @@
 			margin: 10px;		/* calculation below of unitbox total size relies on this */
 			border: 0;
 			padding: 0;
-			overflow: hidden;
+			height:300px;
+			background-color:#333;
+			overflow:auto;
+			/*overflow: hidden;*/
 		}
 	</style>
 </head>
@@ -258,10 +261,20 @@
 			}
 		};
 
-		renderer.display_tracked_ship = (ship) => {
+		renderer.display_tracked_ship = (ship,turn_num) => {
 			let precision = renderer.precise ? 6 : 2;
 			let owner_string = renderer.game.player_names[ship.owner];
 			let colour = colours[ship.owner];
+
+			//Expects this to be in current dir (which might not be same dir as .hlt)
+			let ship_log_path = "turn_" + turn_num + "_ship_" + ship.id + ".log";
+			let log_string = ship_log_path;
+			if (fs.existsSync(ship_log_path)) {
+				log_string = fs.readFileSync(ship_log_path,"utf8");
+			} else {
+				log_string = "Missing " + ship_log_path;
+			}
+
 			unitbox.innerHTML = `Ship ${ship.id} (<span style="color: ${colour}">${owner_string}</span>)`;
 			unitbox.innerHTML += ` &mdash; [ ${ship.x.toFixed(precision)} , ${ship.y.toFixed(precision)} ] &mdash; ${ship.health} health`;
 			if (ship.docking.status !== "undocked") {
@@ -289,6 +302,8 @@
 					}
 				}
 			}
+
+			unitbox.innerHTML += `<br/> ${log_string}`;
 
 			if (renderer.crosshair) {
 				renderer.draw_crosshair(ship);
@@ -351,7 +366,7 @@
 						}
 
 						if (parseInt(sid, 10) === renderer.tracking_id) {
-							renderer.display_tracked_ship(frame.ships[pid][sid]);
+							renderer.display_tracked_ship(frame.ships[pid][sid],renderer.turn);
 							return;
 						}
 					}
